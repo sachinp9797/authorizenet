@@ -2,7 +2,7 @@
 
 namespace Omnipay\AuthorizeNet;
 
-use Guzzle\Http\Client;
+use Omnipay\Common\Http\Client;
 use Omnipay\AuthorizeNet\Message\CIMResponse;
 use Omnipay\Tests\TestCase;
 
@@ -67,7 +67,18 @@ class CIMGatewayIntegrationTest extends TestCase
     {
         // Create a customer profile with the specified email (email is the identifier)
         $email = uniqid('', true) . '@example.com';
+<<<<<<< HEAD
         $this->createCard(array('email' => $email));
+=======
+        $valid_card = $this->getValidCard();
+        $cardRef = $this->createCard(
+            array(
+                'email' => $email,
+                'card' => $valid_card
+            )
+        );
+        $decodedCardRef = json_decode($cardRef,true);
+>>>>>>> upper_upstream/master
 
         // Create a new card in an existing customer profile
         $card = $this->getValidCard();
@@ -83,9 +94,25 @@ class CIMGatewayIntegrationTest extends TestCase
         $this->assertNotNull($response->getCardReference(), 'Card reference should be returned');
         $cardRef = $response->getCardReference();
 
+        // Create a new card in an existing customer profile using its customer profile ID
+        $params = array(
+<<<<<<< HEAD
+            'card' => $card,
+=======
+            'card' => $this->getValidCard(),
+            'customerProfileId' => $decodedCardRef['customerProfileId']
+        );
+        $params['card']['number'] = '4012888818888';
+        $request = $this->gateway->createAdditionalCard($params);
+        $request->setDeveloperMode(true);
+        $response = $request->send();
+        $this->assertTrue($response->isSuccessful(), 'Should be successful as we have created a payment profile');
+        $this->assertNotNull($response->getCardReference(), 'Card reference should be returned');
+
         // Create a card with same number in an existing customer profile (should fail)
         $params = array(
-            'card' => $card,
+            'card' => $valid_card,
+>>>>>>> upper_upstream/master
             'name' => 'Kaywinnet Lee Frye',
             'email' => $email,
         );
@@ -97,7 +124,11 @@ class CIMGatewayIntegrationTest extends TestCase
 
         // Create a card with the same number in an existing customer profile with auto-update enabled
         $params = array(
+<<<<<<< HEAD
             'card' => $card,
+=======
+            'card' => $valid_card,
+>>>>>>> upper_upstream/master
             'name' => 'Kaywinnet Lee Frye',
             'email' => $email,
             'forceCardUpdate' => true
@@ -111,6 +142,64 @@ class CIMGatewayIntegrationTest extends TestCase
             $response->getCardReference(),
             'Card reference should be same as with the one newly created'
         );
+    }
+
+    public function testGetCustomerProfile()
+    {
+        // Create a customer profile with the specified email (email is the identifier)
+        $email = uniqid('', true) . '@example.com';
+        $cardRef = $this->createCard(array('email' => $email));
+        $cardRef = json_decode($cardRef,true);
+        // Grab the customer Profile ID from the createCard response.
+        $params = array(
+            'customerProfileId' => $cardRef['customerProfileId']
+        );
+        // Return just the customer profile without billing data
+        $request = $this->gateway->getCustomerProfile($params);
+        $request->setDeveloperMode(true);
+        $response = $request->send();
+        $this->assertTrue($response->isSuccessful(), 'Should be successful.');
+        $data = $response->getData();
+        $this->assertEquals(
+            $email,
+            $data['profile']['email'],
+            'Should be the same email'
+        );
+    }
+
+    public function testPaymentProfileDelete()
+    {
+
+        // Create a customer profile with the specified email (email is the identifier) (to have a deletable payment profile)
+        $email = uniqid('', true) . '@example.com';
+        $cardRef = $this->createCard(array('email' => $email));
+        $cardRef = json_decode($cardRef,true);
+
+        //Delete the recently created payment profile (deletes the payment profile only, not the customer profile)
+        $params = array(
+            'customerProfileId' => $cardRef['customerProfileId'],
+            'customerPaymentProfileId' => $cardRef['customerPaymentProfileId']
+        );
+        $defaults = array(  );
+        $params = array_merge($defaults, $params);
+        $request = $this->gateway->deleteCard($params);
+        $request->setDeveloperMode(true);
+        /* @var $response CIMResponse */
+        $response = $request->send();
+        $this->assertTrue($response->isSuccessful(), 'Should be successful as we have deleted a payment profile');
+
+        /* retrieve the recently deleted payment profile for the customer profile from authorize.net (returns NULL) */
+        $params = array(
+            'customerProfileId' => $cardRef['customerProfileId'],
+            'customerPaymentProfileId' => $cardRef['customerPaymentProfileId']
+        );
+        $defaults = array(  );
+        $params = array_merge($defaults, $params);
+        $request = $this->gateway->getPaymentProfile($params);
+        $request->setDeveloperMode(true);
+        /* @var $response CIMResponse */
+        $response = $request->send();
+        $this->assertNull($response->getCustomerPaymentProfileId(), 'Should be null as we have deleted that payment profile');
     }
 
     public function testAuthorizeCapture()

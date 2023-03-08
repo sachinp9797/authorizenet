@@ -30,7 +30,7 @@
     "require": {
         "omnipay/common": "^3",
         "ext-json": "*",
-        "ext-simplexml": "*"
+        "ext-libxml": "*"
     },
     "require-dev": {
         "omnipay/tests": "^3",

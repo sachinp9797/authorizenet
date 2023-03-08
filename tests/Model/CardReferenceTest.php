@@ -2,7 +2,10 @@
 
 namespace Omnipay\AuthorizeNet\Model;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> upper_upstream/master
 use Omnipay\Tests\TestCase;
 
 class CardReferenceTest extends TestCase

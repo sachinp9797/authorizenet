@@ -3,6 +3,7 @@
 namespace Omnipay\AuthorizeNet\Message;
 
 use Omnipay\Common\CreditCard;
+use Omnipay\Common\Exception\InvalidRequestException;
 
 /**
  * Authorize.Net AIM Authorize Request
@@ -21,6 +22,7 @@ class AIMAuthorizeRequest extends AIMAbstractRequest
         $this->addSolutionId($data);
         $this->addDescription($data);
         $this->addBillingData($data);
+        $this->addCustomerIP($data);
         $this->addRetail($data);
         $this->addTransactionSettings($data);
 
@@ -69,5 +71,25 @@ class AIMAuthorizeRequest extends AIMAbstractRequest
             $data->transactionRequest->retail->marketType = 2;
             $data->transactionRequest->retail->deviceType = $this->getDeviceType();
         }
+    }
+
+    public function getDeviceType()
+    {
+        return $this->getParameter('deviceType');
+    }
+
+    public function setDeviceType($value)
+    {
+        return $this->setParameter('deviceType', $value);
+    }
+    
+    public function getMarketType()
+    {
+        return $this->getParameter('marketType');
+    }
+
+    public function setMarketType($value)
+    {
+        return $this->setParameter('marketType', $value);
     }
 }

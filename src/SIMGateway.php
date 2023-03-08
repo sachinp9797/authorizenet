@@ -33,14 +33,14 @@ class SIMGateway extends AIMGateway
         return $this->setParameter('apiLoginId', $value);
     }
 
-    public function getTransactionKey()
+    public function getSignatureKey()
     {
-        return $this->getParameter('transactionKey');
+        return $this->getParameter('signatureKey');
     }
 
-    public function setTransactionKey($value)
+    public function setSignatureKey($value)
     {
-        return $this->setParameter('transactionKey', $value);
+        return $this->setParameter('signatureKey', $value);
     }
 
     public function getDeveloperMode()
@@ -53,16 +53,6 @@ class SIMGateway extends AIMGateway
         return $this->setParameter('developerMode', $value);
     }
 
-    public function getHashSecret()
-    {
-        return $this->getParameter('hashSecret');
-    }
-
-    public function setHashSecret($value)
-    {
-        return $this->setParameter('hashSecret', $value);
-    }
-
     public function authorize(array $parameters = array())
     {
         return $this->createRequest('\Omnipay\AuthorizeNet\Message\SIMAuthorizeRequest', $parameters);
@@ -70,7 +60,7 @@ class SIMGateway extends AIMGateway
 
     public function completeAuthorize(array $parameters = array())
     {
-        return $this->createRequest('\Omnipay\AuthorizeNet\Message\SIMCompleteAuthorizeRequest', $parameters);
+        return $this->createRequest('\Omnipay\AuthorizeNet\Message\SIMCompleteRequest', $parameters);
     }
 
     public function capture(array $parameters = array())

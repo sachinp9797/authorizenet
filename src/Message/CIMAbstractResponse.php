@@ -12,6 +12,14 @@ use Omnipay\Common\Message\RequestInterface;
  */
 abstract class CIMAbstractResponse extends AbstractResponse
 {
+    /**
+     * The overall transaction result code.
+     */
+    const TRANSACTION_RESULT_CODE_APPROVED = 1;
+    const TRANSACTION_RESULT_CODE_DECLINED = 2;
+    const TRANSACTION_RESULT_CODE_ERROR    = 3;
+    const TRANSACTION_RESULT_CODE_REVIEW   = 4;
+
     protected $responseType = null;
 
     public function __construct(RequestInterface $request, $data)
@@ -40,7 +48,7 @@ abstract class CIMAbstractResponse extends AbstractResponse
 
     public function isSuccessful()
     {
-        return 1 === $this->getResultCode();
+        return $this->getResultCode() === static::TRANSACTION_RESULT_CODE_APPROVED;
     }
 
     /**
@@ -53,9 +61,9 @@ abstract class CIMAbstractResponse extends AbstractResponse
         $result = (string)$this->data['messages']['resultCode'];
         switch ($result) {
             case 'Ok':
-                return 1;
+                return static::TRANSACTION_RESULT_CODE_APPROVED;
             case 'Error':
-                return 3;
+                return static::TRANSACTION_RESULT_CODE_ERROR;
             default:
                 return null;
         }
@@ -109,17 +117,26 @@ abstract class CIMAbstractResponse extends AbstractResponse
         return $message;
     }
 
+    /**
+     * Get the reusable card reference from the response.
+     * Used in conjuction with CIMGateway::createCard()
+     *
+     * @return string|null
+     */
     public function getCardReference()
     {
         $cardRef = null;
+
         if ($this->isSuccessful()) {
             $data['customerProfileId'] = $this->getCustomerProfileId();
             $data['customerPaymentProfileId'] = $this->getCustomerPaymentProfileId();
+
             if (!empty($data['customerProfileId']) && !empty($data['customerPaymentProfileId'])) {
                 // For card reference both profileId and payment profileId should exist
                 $cardRef = json_encode($data);
             }
         }
+
         return $cardRef;
     }
 
@@ -157,8 +174,10 @@ abstract class CIMAbstractResponse extends AbstractResponse
 
         /** @var CreditCard $card */
         $card = $this->request->getCard();
+
         if ($card) {
             $ccString = $card->getNumber() . $card->getExpiryMonth() . $card->getExpiryYear();
+
             $this->data['hash'] = md5($ccString);
             $this->data['brand'] = $card->getBrand();
             $this->data['expiryYear'] = $card->getExpiryYear();

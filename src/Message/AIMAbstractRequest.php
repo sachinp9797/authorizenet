@@ -70,6 +70,7 @@ abstract class AIMAbstractRequest extends AbstractRequest
     {
         return $this->getParameter('hashSecret');
     }
+
     public function setHashSecret($value)
     {
         return $this->setParameter('hashSecret', $value);
@@ -138,6 +139,7 @@ abstract class AIMAbstractRequest extends AbstractRequest
             $transactionRef = new TransactionReference();
             $transactionRef->setTransId($value);
         }
+
         return $this->setParameter('transactionReference', $transactionRef);
     }
 
@@ -150,6 +152,7 @@ abstract class AIMAbstractRequest extends AbstractRequest
         if (!($value instanceof CardReference)) {
             $value = new CardReference($value);
         }
+
         return parent::setCardReference($value);
     }
 
@@ -160,10 +163,60 @@ abstract class AIMAbstractRequest extends AbstractRequest
     public function getCardReference($serialize = true)
     {
         $value = parent::getCardReference();
+
         if ($serialize) {
             $value = (string)$value;
         }
+
         return $value;
+    }
+
+    public function getInvoiceNumber()
+    {
+        return $this->getParameter('invoiceNumber');
+    }
+
+    public function setInvoiceNumber($value)
+    {
+        return $this->setParameter('invoiceNumber', $value);
+    }
+
+    /**
+     * @link http://developer.authorize.net/api/reference/features/acceptjs.html Documentation on opaque data
+     * @return string
+     */
+    public function getOpaqueDataDescriptor()
+    {
+        return $this->getParameter('opaqueDataDescriptor');
+    }
+
+    /**
+     * @link http://developer.authorize.net/api/reference/features/acceptjs.html Documentation on opaque data
+     * @return string
+     */
+    public function getOpaqueDataValue()
+    {
+        return $this->getParameter('opaqueDataValue');
+    }
+
+    /**
+     * @link http://developer.authorize.net/api/reference/features/acceptjs.html Documentation on opaque data
+     * @param string
+     * @return string
+     */
+    public function setOpaqueDataDescriptor($value)
+    {
+        return $this->setParameter('opaqueDataDescriptor', $value);
+    }
+
+    /**
+     * @link http://developer.authorize.net/api/reference/features/acceptjs.html Documentation on opaque data
+     * @param string
+     * @return string
+     */
+    public function setOpaqueDataValue($value)
+    {
+        return $this->setParameter('opaqueDataValue', $value);
     }
 
     public function sendData($data)
@@ -182,10 +235,12 @@ abstract class AIMAbstractRequest extends AbstractRequest
     public function getBaseData()
     {
         $data = new \SimpleXMLElement('<' . $this->requestType . '/>');
+
         $data->addAttribute('xmlns', 'AnetApi/xml/v1/schema/AnetApiSchema.xsd');
         $this->addAuthentication($data);
         $this->addReferenceId($data);
         $this->addTransactionType($data);
+
         return $data;
     }
 
@@ -198,6 +253,7 @@ abstract class AIMAbstractRequest extends AbstractRequest
     protected function addReferenceId(\SimpleXMLElement $data)
     {
         $txnId = $this->getTransactionId();
+
         if (!empty($txnId)) {
             $data->refId = $this->getTransactionId();
         }
@@ -205,10 +261,11 @@ abstract class AIMAbstractRequest extends AbstractRequest
 
     protected function addTransactionType(\SimpleXMLElement $data)
     {
-        if (!$this->action) {
-            // The extending class probably hasn't specified an "action"
+        if (! $this->action) {
+            // The extending class probably hasn't specified an "action".
             throw new InvalidRequestException();
         }
+
         $data->transactionRequest->transactionType = $this->action;
     }
 
@@ -235,15 +292,23 @@ abstract class AIMAbstractRequest extends AbstractRequest
         /** @var mixed $req */
         $req = $data->transactionRequest;
 
+        // The order must come before the customer ID.
+        $req->order->invoiceNumber = $this->getInvoiceNumber();
+        $req->order->description = $this->getDescription();
+
         // Merchant assigned customer ID
         $customer = $this->getCustomerId();
         if (!empty($customer)) {
             $req->customer->id = $customer;
         }
 
+        //$req->order->description = $this->getDescription();
+
         /** @var CreditCard $card */
         if ($card = $this->getCard()) {
             // A card is present, so include billing and shipping details
+            $req->customer->email = $card->getEmail();
+
             $req->billTo->firstName = $card->getBillingFirstName();
             $req->billTo->lastName = $card->getBillingLastName();
             $req->billTo->company = $card->getBillingCompany();
@@ -252,8 +317,9 @@ abstract class AIMAbstractRequest extends AbstractRequest
             $req->billTo->state = $card->getBillingState();
             $req->billTo->zip = $card->getBillingPostcode();
             $req->billTo->country = $card->getBillingCountry();
+            $req->billTo->phoneNumber = $card->getBillingPhone();
 
-            $req->shipTo->firstName = $card->getShippingLastName();
+            $req->shipTo->firstName = $card->getShippingFirstName();
             $req->shipTo->lastName = $card->getShippingLastName();
             $req->shipTo->company = $card->getShippingCompany();
             $req->shipTo->address = trim($card->getShippingAddress1() . " \n" . $card->getShippingAddress2());

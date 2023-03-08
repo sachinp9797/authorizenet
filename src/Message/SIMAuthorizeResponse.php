@@ -15,8 +15,8 @@ class SIMAuthorizeResponse extends AbstractResponse implements RedirectResponseI
 
     public function __construct(RequestInterface $request, $data, $redirectUrl)
     {
-        $this->request = $request;
-        $this->data = $data;
+        parent::__construct($request, $data);
+
         $this->redirectUrl = $redirectUrl;
     }
 
@@ -43,5 +43,12 @@ class SIMAuthorizeResponse extends AbstractResponse implements RedirectResponseI
     public function getRedirectData()
     {
         return $this->getData();
+    }
+
+    public function getTransactionId()
+    {
+        return isset($this->data[SIMAbstractRequest::TRANSACTION_ID_PARAM])
+            ? $this->data[SIMAbstractRequest::TRANSACTION_ID_PARAM]
+            : null;
     }
 }

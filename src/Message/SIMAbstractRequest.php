@@ -2,11 +2,12 @@
 
 namespace Omnipay\AuthorizeNet\Message;
 
-use Omnipay\Common\Message\AbstractRequest;
-
 /**
  * Authorize.Net SIM Abstract Request
  */
+
+use Omnipay\Common\Message\AbstractRequest;
+
 abstract class SIMAbstractRequest extends AbstractRequest
 {
     /**
@@ -34,14 +35,14 @@ abstract class SIMAbstractRequest extends AbstractRequest
         return $this->setParameter('transactionKey', $value);
     }
 
-    public function getSolutionId()
+    public function getSignatureKey()
     {
-        return $this->getParameter('solutionId');
+        return $this->getParameter('signatureKey');
     }
 
-    public function setSolutionId($value)
+    public function setSignatureKey($value)
     {
-        return $this->setParameter('solutionId', $value);
+        return $this->setParameter('signatureKey', $value);
     }
 
     public function getDeveloperMode()
@@ -127,8 +128,8 @@ abstract class SIMAbstractRequest extends AbstractRequest
         $data = array();
         $data['x_amount'] = $this->getAmount();
 
-        // This is deprecated. The invoice number field is reserved for the invoice number.
-        $data['x_invoice_num'] = $this->getTransactionId();
+        // The invoice number field is properly supported.
+        $data['x_invoice_num'] = $this->getInvoiceNumber();
 
         // A custom field can be used to pass over the merchant site transaction ID.
         $data[static::TRANSACTION_ID_PARAM] = $this->getTransactionId();
