@@ -29,7 +29,7 @@ class AIMPurchaseRequestTest extends TestCase
 
         $this->assertEquals('authCaptureTransaction', $data->transactionRequest->transactionType);
         $this->assertEquals('cust-id', $data->transactionRequest->customer->id);
-        $this->assertEquals('AAA100302', $data->transactionRequest->solution->id);
+        $this->assertEquals('AAA100302', $data->transactionRequest->solutionId);
 
         $setting = $data->transactionRequest->transactionSettings->setting[0];
         $this->assertEquals('testRequest', $setting->settingName);

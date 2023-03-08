@@ -276,7 +276,7 @@ abstract class AIMAbstractRequest extends AbstractRequest
 
         $solution = $this->getSolutionId();
         if (!empty($solution)) {
-            $req->solution->id = $solution;
+            $req->solutionId = $solution;
         }
     }
 

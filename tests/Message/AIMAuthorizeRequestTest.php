@@ -35,7 +35,7 @@ class AIMAuthorizeRequestTest extends TestCase
         $this->assertEquals('authOnlyTransaction', $data->transactionRequest->transactionType);
         $this->assertEquals('cust-id', $data->transactionRequest->customer->id);
         $this->assertEquals('example@example.net', $data->transactionRequest->customer->email);
-        $this->assertEquals('SOL12345ID', $data->transactionRequest->solution->id);
+        $this->assertEquals('SOL12345ID', $data->transactionRequest->solutionId);
         $this->assertEquals('2', $data->transactionRequest->retail->marketType);
         $this->assertEquals('1', $data->transactionRequest->retail->deviceType);
 

@@ -30,6 +30,6 @@ class CIMPurchaseRequestTest extends TestCase
         $this->assertEquals('26317841', $data->transactionRequest->profile->paymentProfile->paymentProfileId);
         $this->assertEquals('27057151', $data->transactionRequest->profile->shippingProfileId);
         $this->assertEquals('Test purchase transaction', $data->transactionRequest->order->description);
-        $this->assertEquals('AAA100302', $data->transactionRequest->solution->id);
+        $this->assertEquals('AAA100302', $data->transactionRequest->solutionId);
     }
 }
