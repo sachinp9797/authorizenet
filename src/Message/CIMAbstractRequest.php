@@ -103,6 +103,9 @@ abstract class CIMAbstractRequest extends AIMAbstractRequest
     {
         $headers = array('Content-Type' => 'text/xml; charset=utf-8');
 
+        // Adding this to unmask Expiry Date to get original Expiration date
+        $data->addChild("unmaskExpirationDate", true);
+
         $data = $data->saveXml();
         $httpResponse = $this->httpClient->request('POST', $this->getEndpoint(), $headers, $data);
 
