@@ -193,16 +193,12 @@ abstract class CIMAbstractResponse extends AbstractResponse
             return;
         }
 
-        /** @var CreditCard $card */
-        $card = $this->request->getCard();
+        $parameters = $this->getRequest()->getParameters();
 
-        if ($card) {
-            $ccString = $card->getNumber() . $card->getExpiryMonth() . $card->getExpiryYear();
+        if ($parameters && isset($parameters['opaqueDataValue'])) {
+            $token = $parameters['opaqueDataValue'];
 
-            $this->data['hash'] = md5($ccString);
-            $this->data['brand'] = $card->getBrand();
-            $this->data['expiryYear'] = $card->getExpiryYear();
-            $this->data['expiryMonth'] = $card->getExpiryMonth();
+            $this->data['hash'] = md5($token);
         }
     }
 }
