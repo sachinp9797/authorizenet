@@ -39,15 +39,6 @@ class CIMCreatePaymentProfileRequest extends CIMCreateCardRequest
         $data = $data->saveXml();
         $httpResponse = $this->httpClient->request('POST', $this->getEndpoint(), $headers, $data);
 
-        $response = new CIMCreatePaymentProfileResponse($this, $httpResponse->getBody()->getContents());
-
-        $parameters = array(
-            'customerProfileId' => $response->getCustomerProfileId(),
-            'customerPaymentProfileId' => $response->getCustomerPaymentProfileId()
-        );
-
-        $response = $this->makeGetPaymentProfileRequest($parameters);
-
-        return $this->response = $response;
+        return $this->response = new CIMCreatePaymentProfileResponse($this, $httpResponse->getBody()->getContents());
     }
 }

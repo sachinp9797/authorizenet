@@ -43,9 +43,6 @@ class CIMGateway extends AIMGateway
      */
     public function createCard(array $parameters = array())
     {
-        if (isset($parameters['customerProfileId'])) {
-            return $this->createAdditionalCard($parameters);
-        }
         return $this->createRequest('\Omnipay\AuthorizeNet\Message\CIMCreateCardRequest', $parameters);
     }
 

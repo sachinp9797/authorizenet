@@ -170,22 +170,37 @@ class CIMCreateCardRequest extends CIMAbstractRequest
 
     public function sendData($data)
     {
-        $headers = array('Content-Type' => 'text/xml; charset=utf-8');
-        $data = $data->saveXml();
-        $httpResponse = $this->httpClient->request('POST', $this->getEndpoint(), $headers, $data);
+        if (isset($this->getParameters()['customerProfileId'])) {
+            $createPaymentProfileResponse = $this->makeCreatePaymentProfileRequest($this->getParameters());
 
-        $response = new CIMCreateCardResponse($this, $httpResponse->getBody()->getContents());
+            if (!$createPaymentProfileResponse->isSuccessful()) {
+                return $createPaymentProfileResponse;
+            }
 
-        if (!$response->isSuccessful() && $response->getReasonCode() == 'E00039') {
-            // Duplicate profile. Try adding a new payment profile for the same profile and get the response
-            $response = $this->createPaymentProfile($response);
-        } elseif ($response->isSuccessful()) {
             $parameters = array(
-                'customerProfileId' => $response->getCustomerProfileId(),
-                'customerPaymentProfileId' => $response->getCustomerPaymentProfileId()
+                'customerProfileId' => $createPaymentProfileResponse->getCustomerProfileId(),
+                'customerPaymentProfileId' => $createPaymentProfileResponse->getCustomerPaymentProfileId()
             );
-            // Get the payment profile for the specified card.
+
             $response = $this->makeGetPaymentProfileRequest($parameters);
+        } else {
+            $headers = array('Content-Type' => 'text/xml; charset=utf-8');
+            $data = $data->saveXml();
+            $httpResponse = $this->httpClient->request('POST', $this->getEndpoint(), $headers, $data);
+
+            $response = new CIMCreateCardResponse($this, $httpResponse->getBody()->getContents());
+
+            if (!$response->isSuccessful() && $response->getReasonCode() == 'E00039') {
+                // Duplicate profile. Try adding a new payment profile for the same profile and get the response
+                $response = $this->createPaymentProfile($response);
+            } elseif ($response->isSuccessful()) {
+                $parameters = array(
+                    'customerProfileId' => $response->getCustomerProfileId(),
+                    'customerPaymentProfileId' => $response->getCustomerPaymentProfileId()
+                );
+                // Get the payment profile for the specified card.
+                $response = $this->makeGetPaymentProfileRequest($parameters);
+            }
         }
 
         $response->augmentResponse();
