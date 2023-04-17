@@ -196,7 +196,13 @@ abstract class CIMAbstractResponse extends AbstractResponse
         /** @var CreditCard $card */
         $card = $this->request->getCard();
 
-        if ($card) {
+        $parameters = $this->getRequest()->getParameters();
+
+        if ($parameters && isset($parameters['opaqueDataValue'])) {
+            $token = $parameters['opaqueDataValue'];
+
+            $this->data['hash'] = md5($token);
+        } else if ($card) {
             $ccString = $card->getNumber() . $card->getExpiryMonth() . $card->getExpiryYear();
 
             $this->data['hash'] = md5($ccString);

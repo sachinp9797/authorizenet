@@ -145,6 +145,23 @@ class CIMGatewayTest extends GatewayTestCase
         $this->assertSame('Successful.', $response->getMessage());
     }
 
+    public function testShouldCreateCardFromOpaqueDataIfCustomerProfileExistsInParameters()
+    {
+        $this->setMockHttpResponse(array('CIMCreatePaymentProfileSuccess.txt', 'CIMGetPaymentProfileSuccess.txt'));
+
+        $parameters = $this->createCardFromOpaqueDataOptions;
+        $parameters['customerProfileId'] = "28775801";
+
+        $response = $this->gateway->createCard($parameters)->send();
+
+        $this->assertTrue($response->isSuccessful());
+        $this->assertSame(
+            '{"customerProfileId":"28775801","customerPaymentProfileId":"26485433"}',
+            $response->getCardReference()
+        );
+        $this->assertSame('Successful.', $response->getMessage());
+    }
+
     public function testShouldUpdateExistingPaymentProfileIfDuplicateExistsAndForceCardUpdateIsSet()
     {
         // Duplicate **payment** profile
