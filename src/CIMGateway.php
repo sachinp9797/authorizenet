@@ -83,6 +83,9 @@ class CIMGateway extends AIMGateway
 
     public function purchase(array $parameters = array())
     {
+        if (isset($parameters['isAimRequest'])) {
+            return $this->createRequest('\Omnipay\AuthorizeNet\Message\AIMPurchaseRequest', $parameters);
+        }
         return $this->createRequest('\Omnipay\AuthorizeNet\Message\CIMPurchaseRequest', $parameters);
     }
 
