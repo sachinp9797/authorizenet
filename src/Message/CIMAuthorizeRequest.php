@@ -54,6 +54,6 @@ class CIMAuthorizeRequest extends AIMAuthorizeRequest
 
     private function isTokenWithoutCardReference(): bool
     {
-        return isset($this->getParameters()['opaqueDataDescriptor']) && !isset($this->getParameters()['cardReference']);
+        return isset($this->getParameters()['opaqueDataValue']) && !isset($this->getParameters()['cardReference']);
     }
 }
