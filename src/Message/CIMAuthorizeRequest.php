@@ -11,6 +11,12 @@ class CIMAuthorizeRequest extends AIMAuthorizeRequest
 {
     protected function addPayment(\SimpleXMLElement $data)
     {
+        if ($this->isTokenWithoutCardReference()) {
+            parent::addPayment($data);
+
+            return $data;
+        }
+
         $this->validate('cardReference');
 
         /** @var mixed $req */
@@ -44,5 +50,10 @@ class CIMAuthorizeRequest extends AIMAuthorizeRequest
     {
         // Do nothing since billing information is already part of the customer profile
         return $data;
+    }
+
+    private function isTokenWithoutCardReference(): bool
+    {
+        return isset($this->getParameters()['opaqueDataValue']) && !isset($this->getParameters()['cardReference']);
     }
 }
