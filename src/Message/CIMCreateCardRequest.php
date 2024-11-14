@@ -174,21 +174,25 @@ class CIMCreateCardRequest extends CIMAbstractRequest
         if (isset($this->getParameters()['customerProfileId'])) {
             $createPaymentProfileResponse = $this->makeCreatePaymentProfileRequest($this->getParameters());
 
-            if (!$createPaymentProfileResponse->isSuccessful() && $createPaymentProfileResponse->getReasonCode() === 'E00039') {
-                $data = $createPaymentProfileResponse->getData();
-                if ($data && isset($data['customerPaymentProfileId'])) {
-                    $parameters = [
-                        'customerProfileId' => $this->getParameters()['customerProfileId'],
-                        'customerPaymentProfileId' => $data['customerPaymentProfileId']
-                    ];
-                    $response = $this->makeGetPaymentProfileRequest($parameters);
-                }
-            } elseif ($createPaymentProfileResponse->isSuccessful()) {
+            if ($createPaymentProfileResponse->isSuccessful()) {
                 $parameters = [
                     'customerProfileId' => $createPaymentProfileResponse->getCustomerProfileId(),
                     'customerPaymentProfileId' => $createPaymentProfileResponse->getCustomerPaymentProfileId()
                 ];
                 $response = $this->makeGetPaymentProfileRequest($parameters);
+            } else {
+                if ($createPaymentProfileResponse->getReasonCode() === 'E00039') {
+                    $data = $createPaymentProfileResponse->getData();
+                    if ($data && isset($data['customerPaymentProfileId'])) {
+                        $parameters = [
+                            'customerProfileId' => $this->getParameters()['customerProfileId'],
+                            'customerPaymentProfileId' => $data['customerPaymentProfileId']
+                        ];
+                        $response = $this->makeGetPaymentProfileRequest($parameters);
+                    }
+                } else {
+                    return $createPaymentProfileResponse;
+                }
             }
         } else {
             $headers = array('Content-Type' => 'text/xml; charset=utf-8');
