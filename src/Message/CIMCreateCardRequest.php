@@ -174,14 +174,18 @@ class CIMCreateCardRequest extends CIMAbstractRequest
         if (isset($this->getParameters()['customerProfileId'])) {
             $createPaymentProfileResponse = $this->makeCreatePaymentProfileRequest($this->getParameters());
 
-            if (!$createPaymentProfileResponse->isSuccessful() && $createPaymentProfileResponse->getReasonCode() === 'E00039') {
-                $data = $createPaymentProfileResponse->getData();
-                if ($data && isset($data['customerPaymentProfileId'])) {
-                    $parameters = [
-                        'customerProfileId' => $this->getParameters()['customerProfileId'],
-                        'customerPaymentProfileId' => $data['customerPaymentProfileId']
-                    ];
-                    $response = $this->makeGetPaymentProfileRequest($parameters);
+            if (!$createPaymentProfileResponse->isSuccessful()) {
+                if ($createPaymentProfileResponse->getReasonCode() === 'E00039') {
+                    $data = $createPaymentProfileResponse->getData();
+                    if ($data && isset($data['customerPaymentProfileId'])) {
+                        $parameters = [
+                            'customerProfileId' => $this->getParameters()['customerProfileId'],
+                            'customerPaymentProfileId' => $data['customerPaymentProfileId']
+                        ];
+                        $response = $this->makeGetPaymentProfileRequest($parameters);
+                    }
+                } else {
+                    return $createPaymentProfileResponse;
                 }
             } elseif ($createPaymentProfileResponse->isSuccessful()) {
                 $parameters = [
