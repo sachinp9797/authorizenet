@@ -174,7 +174,13 @@ class CIMCreateCardRequest extends CIMAbstractRequest
         if (isset($this->getParameters()['customerProfileId'])) {
             $createPaymentProfileResponse = $this->makeCreatePaymentProfileRequest($this->getParameters());
 
-            if (!$createPaymentProfileResponse->isSuccessful()) {
+            if ($createPaymentProfileResponse->isSuccessful()) {
+                $parameters = [
+                    'customerProfileId' => $createPaymentProfileResponse->getCustomerProfileId(),
+                    'customerPaymentProfileId' => $createPaymentProfileResponse->getCustomerPaymentProfileId()
+                ];
+                $response = $this->makeGetPaymentProfileRequest($parameters);
+            } else {
                 if ($createPaymentProfileResponse->getReasonCode() === 'E00039') {
                     $data = $createPaymentProfileResponse->getData();
                     if ($data && isset($data['customerPaymentProfileId'])) {
@@ -187,12 +193,6 @@ class CIMCreateCardRequest extends CIMAbstractRequest
                 } else {
                     return $createPaymentProfileResponse;
                 }
-            } elseif ($createPaymentProfileResponse->isSuccessful()) {
-                $parameters = [
-                    'customerProfileId' => $createPaymentProfileResponse->getCustomerProfileId(),
-                    'customerPaymentProfileId' => $createPaymentProfileResponse->getCustomerPaymentProfileId()
-                ];
-                $response = $this->makeGetPaymentProfileRequest($parameters);
             }
         } else {
             $headers = array('Content-Type' => 'text/xml; charset=utf-8');
