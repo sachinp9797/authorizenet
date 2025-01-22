@@ -9,7 +9,12 @@ use Omnipay\Common\CreditCard;
  */
 class CIMCreateCardRequest extends CIMAbstractRequest
 {
+    const MAX_ALLOWED_PAYMENT_PROFILES = 10;
     protected $requestType = 'createCustomerProfileRequest';
+
+    // Stores the last 4 digits of the card number for matching payment profiles.
+    // This is not included in parameters as it is not sent to Authorize.net.
+    private $last4;
 
     public function getData()
     {
@@ -172,24 +177,7 @@ class CIMCreateCardRequest extends CIMAbstractRequest
     public function sendData($data)
     {
         if (isset($this->getParameters()['customerProfileId'])) {
-            $createPaymentProfileResponse = $this->makeCreatePaymentProfileRequest($this->getParameters());
-
-            if (!$createPaymentProfileResponse->isSuccessful() && $createPaymentProfileResponse->getReasonCode() === 'E00039') {
-                $data = $createPaymentProfileResponse->getData();
-                if ($data && isset($data['customerPaymentProfileId'])) {
-                    $parameters = [
-                        'customerProfileId' => $this->getParameters()['customerProfileId'],
-                        'customerPaymentProfileId' => $data['customerPaymentProfileId']
-                    ];
-                    $response = $this->makeGetPaymentProfileRequest($parameters);
-                }
-            } elseif ($createPaymentProfileResponse->isSuccessful()) {
-                $parameters = [
-                    'customerProfileId' => $createPaymentProfileResponse->getCustomerProfileId(),
-                    'customerPaymentProfileId' => $createPaymentProfileResponse->getCustomerPaymentProfileId()
-                ];
-                $response = $this->makeGetPaymentProfileRequest($parameters);
-            }
+            $response = $this->handleExistingCustomerProfile();
         } else {
             $headers = array('Content-Type' => 'text/xml; charset=utf-8');
             $data = $data->saveXml();
@@ -339,5 +327,70 @@ class CIMCreateCardRequest extends CIMAbstractRequest
         $obj = new CIMUpdatePaymentProfileRequest($this->httpClient, $this->httpRequest);
         $obj->initialize(array_replace($this->getParameters(), $parameters));
         return $obj->send();
+    }
+
+    /**
+     * Handle requests when the customer profile already exists.
+     *
+     * @return CIMCreatePaymentProfileResponse|CIMGetPaymentProfileResponse
+     */
+    private function handleExistingCustomerProfile()
+    {
+        $parameters = $this->getParameters();
+        $getProfileResponse = $this->makeGetProfileRequest($parameters);
+        $profileData = $getProfileResponse->getData();
+        $paymentProfiles = $profileData["profile"]["paymentProfiles"];
+
+        // If the max number of profiles is reached, attempt to update the matching profile if it exists.
+        if ($this->last4 && count($paymentProfiles) >= self::MAX_ALLOWED_PAYMENT_PROFILES) {
+            $customerPaymentProfileId = $getProfileResponse->getMatchingPaymentProfileId($this->last4);
+
+            if ($customerPaymentProfileId) {
+                $updateParameters = array_replace($parameters, [
+                    'customerPaymentProfileId' => $customerPaymentProfileId,
+                ]);
+
+                $updateResponse = $this->makeUpdatePaymentProfileRequest($updateParameters);
+
+                if ($updateResponse->isSuccessful()) {
+                    return $this->makeGetPaymentProfileRequest($updateParameters);
+                }
+            }
+        }
+
+        // Otherwise, try to create a new payment profile
+        $createPaymentProfileResponse = $this->makeCreatePaymentProfileRequest($parameters);
+
+        if ($createPaymentProfileResponse->isSuccessful()) {
+            $parameters = [
+                'customerProfileId'         => $createPaymentProfileResponse->getCustomerProfileId(),
+                'customerPaymentProfileId'  => $createPaymentProfileResponse->getCustomerPaymentProfileId()
+            ];
+            return $this->makeGetPaymentProfileRequest($parameters);
+        }
+
+        if ($createPaymentProfileResponse->getReasonCode() === CIMGetProfileResponse::ERROR_DUPLICATE_PROFILE) {
+            $data = $createPaymentProfileResponse->getData();
+            if ($data && isset($data['customerPaymentProfileId'])) {
+                $parameters = [
+                    'customerProfileId'         => $parameters['customerProfileId'],
+                    'customerPaymentProfileId'  => $data['customerPaymentProfileId']
+                ];
+                return $this->makeGetPaymentProfileRequest($parameters);
+            }
+        }
+
+        return $createPaymentProfileResponse;
+    }
+
+    /**
+     * Sets the last 4 digits of the card number.
+     * This method is required because Omnipay uses setters for parameters passed to the createCard function.
+     *
+     * @param string $last4 The last 4 digits of the card number.
+     */
+    public function setLast4(string $last4)
+    {
+        $this->last4 = $last4;
     }
 }
