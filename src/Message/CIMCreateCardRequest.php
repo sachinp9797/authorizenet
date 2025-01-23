@@ -176,7 +176,7 @@ class CIMCreateCardRequest extends CIMAbstractRequest
 
     public function sendData($data)
     {
-        if (isset($this->getParameters()['customerProfileId'])) {
+        if (isset($this->getParameters()['customerProfileId']) && $this->getOpaqueDataValue()) {
             $response = $this->handleExistingCustomerProfile();
         } else {
             $headers = array('Content-Type' => 'text/xml; charset=utf-8');
