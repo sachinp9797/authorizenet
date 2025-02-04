@@ -2,10 +2,6 @@
 
 namespace Omnipay\AuthorizeNet\Message;
 
-use Omnipay\AuthorizeNet\Message\Query\QueryDetailRequest;
-use Omnipay\AuthorizeNet\Message\Query\QueryDetailResponse;
-use stdClass;
-
 /**
  * Authorize.net AIM Refund Request
  */
