@@ -11,8 +11,6 @@ use stdClass;
  */
 class AIMRefundRequest extends AIMAbstractRequest
 {
-    const ERROR_CODE_INVALID_PAYMENT = "E00051";
-
     protected $action = 'refundTransaction';
 
     public function shouldVoidIfRefundFails()
@@ -60,71 +58,15 @@ class AIMRefundRequest extends AIMAbstractRequest
         /** @var AIMResponse $response */
         $response = parent::send();
 
-        if (!$response->isSuccessful()) {
-            $shouldVoid = $this->shouldVoidIfRefundFails();
-            $isCreditIssueError = $response->getReasonCode() == AIMResponse::ERROR_RESPONSE_CODE_CANNOT_ISSUE_CREDIT;
-            if ($shouldVoid && $isCreditIssueError) {
-                // This transaction has not yet been settled, hence cannot be refunded. But a void is possible.
-                $voidRequest = new CIMVoidRequest($this->httpClient, $this->httpRequest);
-                $voidRequest->initialize($this->getParameters());
-                $response = $voidRequest->send();
-            } else {
-                $errorCode = null;
-                if ($response->getData() && isset($response->getData()->messages->message)) {
-                    $errorCode = (string) $response->getData()->messages->message->code;
-                }
-
-                if ($errorCode === self::ERROR_CODE_INVALID_PAYMENT) {
-                    /** @var QueryDetailResponse $transactionResponse */
-                    $transactionResponse = $this->getTransactionDetails();
-
-                    if (!$transactionResponse->isSuccessful()) {
-                        return $response;
-                    }
-
-                    $transactionData = $transactionResponse->getTransaction();
-                    $hasCustomerProfileId = isset($transactionData['profile']['customerProfileId']);
-                    $hasCreditCardInfo = isset($transactionData['payment']['creditCard']);
-
-                    $providedCard = $this->getParameters()['card'] ?? null;
-
-                    if ($hasCreditCardInfo && !$hasCustomerProfileId && $providedCard && isset($providedCard->getParameters()['number'])) {
-                        $transactionCardInfo = $transactionData['payment']['creditCard'];
-                        $providedCardNumber = $providedCard->getParameters()['number'];
-                        // Last 4 digits from the provided full card number
-                        $providedCardLast4 = substr($providedCardNumber, -4);
-                        // Last 4 digits from the transaction's recorded card number
-                        $transactionCardLast4 = substr($transactionCardInfo['cardNumber'], -4);
-
-                        // Proceed with the refund only if the last 4 digits match
-                        if ($providedCardLast4 === $transactionCardLast4) {
-                            // Create a card object to attach card details to the transaction reference
-                            $cardDetails = new stdClass();
-                            $cardDetails->number = $transactionCardInfo['cardNumber'];
-                            $cardDetails->expiry = $transactionCardInfo['expirationDate'];
-                            $this->getTransactionReference()->setCard($cardDetails);
-
-                            $response = parent::send();
-                        }
-                    }
-                }
-
-            }
+        if (!$response->isSuccessful() && $this->shouldVoidIfRefundFails() &&
+            $response->getReasonCode() == AIMResponse::ERROR_RESPONSE_CODE_CANNOT_ISSUE_CREDIT
+        ) {
+            // This transaction has not yet been settled, hence cannot be refunded. But a void is possible.
+            $voidRequest = new CIMVoidRequest($this->httpClient, $this->httpRequest);
+            $voidRequest->initialize($this->getParameters());
+            $response = $voidRequest->send();
         }
 
         return $response;
-    }
-
-
-    /**
-     * Helper to get transaction details for the given transaction reference.
-     */
-    private function getTransactionDetails()
-    {
-        $transId = $this->getTransactionReference()->getTransId();
-        $queryRequest = new QueryDetailRequest($this->httpClient, $this->httpRequest);
-        $parameters = array_replace($this->getParameters(), array('transactionReference' => $transId));
-        $queryRequest->initialize(array_replace($this->getParameters(), $parameters));
-        return $queryRequest->send();
     }
 }
